@@ -1,0 +1,159 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Quick Dispense - Pharmacy Management{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-box-arrow-right"></i>
+                    Quick Medicine Dispense
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i>
+                    <strong>Quick Dispense:</strong> Use this form to quickly dispense medicine to patients. 
+                    Make sure the medicine and batch are available in inventory.
+                </div>
+
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.medicine_name.id_for_label }}" class="form-label required">
+                            Medicine Name
+                        </label>
+                        {{ form.medicine_name }}
+                        {% if form.medicine_name.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.medicine_name.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.batch_no.id_for_label }}" class="form-label required">
+                            Batch Number
+                        </label>
+                        {{ form.batch_no }}
+                        {% if form.batch_no.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.batch_no.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.quantity.id_for_label }}" class="form-label required">
+                            Quantity to Dispense
+                        </label>
+                        {{ form.quantity }}
+                        {% if form.quantity.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.quantity.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.patient_name.id_for_label }}" class="form-label required">
+                            Patient Name
+                        </label>
+                        {{ form.patient_name }}
+                        {% if form.patient_name.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.patient_name.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="{{ form.prescribing_doctor.id_for_label }}" class="form-label">
+                            Prescribing Doctor
+                        </label>
+                        {{ form.prescribing_doctor }}
+                        {% if form.prescribing_doctor.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.prescribing_doctor.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'inventory_list' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left"></i> Back
+                        </a>
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-check-circle"></i> Dispense Medicine
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-info-circle"></i> Quick Dispense Guide
+                </h6>
+            </div>
+            <div class="card-body">
+                <h6 class="text-primary">Before Dispensing:</h6>
+                <ul class="small">
+                    <li>Verify the medicine name and batch number</li>
+                    <li>Check expiry date</li>
+                    <li>Confirm sufficient stock is available</li>
+                    <li>Verify patient identity</li>
+                </ul>
+
+                <h6 class="text-primary mt-3">After Dispensing:</h6>
+                <ul class="small">
+                    <li>Provide proper instructions to patient</li>
+                    <li>Record will be automatically added to dispense history</li>
+                    <li>Inventory will be updated automatically</li>
+                </ul>
+
+                <div class="alert alert-warning mt-3">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <strong>Important:</strong> This action cannot be undone. Make sure all information is correct before dispensing.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Auto-complete functionality could be added here
+    // For now, basic form validation
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const medicineName = document.getElementById('id_medicine_name').value.trim();
+        const batchNo = document.getElementById('id_batch_no').value.trim();
+        const quantity = parseInt(document.getElementById('id_quantity').value) || 0;
+        const patientName = document.getElementById('id_patient_name').value.trim();
+        
+        if (!medicineName || !batchNo || quantity <= 0 || !patientName) {
+            e.preventDefault();
+            alert('Please fill in all required fields correctly.');
+            return false;
+        }
+        
+        // Confirmation dialog
+        const confirmed = confirm(
+            `Confirm dispensing ${quantity} units of "${medicineName}" (Batch: ${batchNo}) to "${patientName}"?`
+        );
+        
+        if (!confirmed) {
+            e.preventDefault();
+            return false;
+        }
+    });
+</script>
+{% endblock %}

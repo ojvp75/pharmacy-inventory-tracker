@@ -1,0 +1,334 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Inventory List - Pharmacy Management{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Statistics Cards -->
+    <div class="col-12 mb-4">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="stat-number">{{ total_medicines }}</div>
+                        <div class="stat-label">Total Medicines</div>
+                    </div>
+                    <i class="bi bi-prescription2 icon"></i>
+                </div>
+            </div>
+            <div class="stat-card" style="border-left-color: #dc3545;">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="stat-number" style="color: #dc3545;">{{ expired_count }}</div>
+                        <div class="stat-label">Expired Items</div>
+                    </div>
+                    <i class="bi bi-exclamation-triangle icon" style="color: #dc3545;"></i>
+                </div>
+            </div>
+            <div class="stat-card" style="border-left-color: #28a745;">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="stat-number" style="color: #28a745;">{{ inventory.paginator.count }}</div>
+                        <div class="stat-label">Total Records</div>
+                    </div>
+                    <i class="bi bi-list-check icon" style="color: #28a745;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="col-lg-9">
+        <!-- Filters -->
+        <div class="filters-container">
+            <form method="get" id="filterForm">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label for="search" class="form-label">Search</label>
+                        <div class="search-box">
+                            <i class="bi bi-search search-icon"></i>
+                            <input type="text" name="q" id="search" class="form-control" 
+                                   placeholder="Medicine name, batch, generic..." value="{{ query }}">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="dosage_form" class="form-label">Dosage Form</label>
+                        <select name="dosage_form" id="dosage_form" class="form-select">
+                            <option value="">All Forms</option>
+                            {% for form in dosage_forms %}
+                                <option value="{{ form }}" {% if form == selected_dosage_form %}selected{% endif %}>
+                                    {{ form|title }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="expiry" class="form-label">Expiry Status</label>
+                        <select name="expiry" id="expiry" class="form-select">
+                            <option value="">All Items</option>
+                            <option value="expired" {% if selected_expiry_filter == 'expired' %}selected{% endif %}>Expired</option>
+                            <option value="expiring_soon" {% if selected_expiry_filter == 'expiring_soon' %}selected{% endif %}>Expiring Soon</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="stock" class="form-label">Stock Level</label>
+                        <select name="stock" id="stock" class="form-select">
+                            <option value="">All Stock</option>
+                            <option value="low" {% if selected_stock_filter == 'low' %}selected{% endif %}>Low Stock</option>
+                        </select>
+                    </div>
+                    <div class="col-md-1">
+                        <label class="form-label">&nbsp;</label>
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-funnel"></i>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="quick-actions">
+                    <a href="{% url 'add_inventory' %}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Add Medicine
+                    </a>
+                    <a href="{% url 'quick_dispense' %}" class="btn btn-success">
+                        <i class="bi bi-box-arrow-right"></i> Quick Dispense
+                    </a>
+                    <a href="{% url 'export_csv' %}" class="btn btn-info">
+                        <i class="bi bi-download"></i> Export CSV
+                    </a>
+                    <button onclick="window.print()" class="btn btn-outline-secondary">
+                        <i class="bi bi-printer"></i> Print
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Inventory Table -->
+        <div class="data-table">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>
+                                <a href="?{% if sort_by == 'medicine_name' %}-{% endif %}medicine_name" 
+                                   class="text-white text-decoration-none">
+                                    Medicine Name
+                                    <i class="bi bi-arrow-{% if sort_by == 'medicine_name' %}up{% elif sort_by == '-medicine_name' %}down{% else %}up-down{% endif %}"></i>
+                                </a>
+                            </th>
+                            <th>Dosage/Strength</th>
+                            <th>Batch No.</th>
+                            <th>
+                                <a href="?{% if sort_by == 'expiry_date' %}-{% endif %}expiry_date" 
+                                   class="text-white text-decoration-none">
+                                    Expiry Date
+                                    <i class="bi bi-arrow-{% if sort_by == 'expiry_date' %}up{% elif sort_by == '-expiry_date' %}down{% else %}up-down{% endif %}"></i>
+                                </a>
+                            </th>
+                            <th>Stock</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in inventory %}
+                            <tr class="{% if item.is_expired %}expired{% elif item.days_to_expiry <= 30 %}expiring-soon{% endif %} 
+                                      {% if item.is_low_stock %}low-stock{% endif %}">
+                                <td>
+                                    <div>
+                                        <strong>
+                                            <a href="{% url 'medicine_detail' item.id %}" class="text-decoration-none">
+                                                {{ item.medicine_name }}
+                                            </a>
+                                        </strong>
+                                        {% if item.generic_name %}
+                                            <br><small class="text-muted">{{ item.generic_name }}</small>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark">{{ item.dosage_form|title }}</span>
+                                    {% if item.strength %}
+                                        <br><small>{{ item.strength }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <code>{{ item.batch_no }}</code>
+                                    {% if item.manufacturer %}
+                                        <br><small class="text-muted">{{ item.manufacturer }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {{ item.expiry_date }}
+                                    <br>
+                                    <small class="{% if item.is_expired %}text-danger{% elif item.days_to_expiry <= 30 %}text-warning{% else %}text-success{% endif %}">
+                                        {% if item.is_expired %}
+                                            Expired
+                                        {% elif item.days_to_expiry <= 30 %}
+                                            {{ item.days_to_expiry }} days left
+                                        {% else %}
+                                            {{ item.days_to_expiry }} days
+                                        {% endif %}
+                                    </small>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <strong>{{ item.balance }}</strong>
+                                        {% if item.is_low_stock %}
+                                            <i class="bi bi-exclamation-triangle text-warning ms-1" title="Low Stock"></i>
+                                        {% endif %}
+                                    </div>
+                                    <small class="text-muted">
+                                        In: {{ item.quantity_in }} | Out: {{ item.quantity_out }}
+                                    </small>
+                                </td>
+                                <td>
+                                    {% if item.is_expired %}
+                                        <span class="badge bg-danger">Expired</span>
+                                    {% elif item.days_to_expiry <= 30 %}
+                                        <span class="badge bg-warning">Expiring Soon</span>
+                                    {% else %}
+                                        <span class="badge bg-success">Active</span>
+                                    {% endif %}
+                                    
+                                    {% if item.is_low_stock %}
+                                        <br><span class="badge bg-orange mt-1">Low Stock</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <a href="{% url 'medicine_detail' item.id %}" 
+                                           class="btn btn-outline-primary" title="View Details">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a href="{% url 'edit_inventory' item.id %}" 
+                                           class="btn btn-outline-warning" title="Edit">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <a href="{% url 'delete_inventory' item.id %}" 
+                                           class="btn btn-outline-danger" title="Delete">
+                                            <i class="bi bi-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="7" class="text-center py-4">
+                                    <i class="bi bi-inbox display-4 text-muted"></i>
+                                    <br>
+                                    <h5 class="text-muted mt-2">No inventory items found</h5>
+                                    {% if query %}
+                                        <p class="text-muted">Try adjusting your search filters</p>
+                                        <a href="{% url 'inventory_list' %}" class="btn btn-outline-primary">Clear Filters</a>
+                                    {% else %}
+                                        <p class="text-muted">Start by adding some medicines to your inventory</p>
+                                        <a href="{% url 'add_inventory' %}" class="btn btn-primary">Add First Medicine</a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Pagination -->
+        {% if inventory.has_other_pages %}
+        <nav class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if inventory.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1">&laquo; First</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ inventory.previous_page_number }}">Previous</a>
+                    </li>
+                {% endif %}
+
+                {% for num in inventory.paginator.page_range %}
+                    {% if inventory.number == num %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                    {% elif num > inventory.number|add:'-3' and num < inventory.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if inventory.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ inventory.next_page_number }}">Next</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ inventory.paginator.num_pages }}">Last &raquo;</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-lg-3">
+        <div class="sidebar">
+            <h6 class="mb-3"><i class="bi bi-speedometer2"></i> Quick Stats</h6>
+            
+            <div class="mb-3">
+                <small class="text-muted d-block">Total Medicines</small>
+                <h4 class="text-primary mb-0">{{ total_medicines }}</h4>
+            </div>
+            
+            <div class="mb-3">
+                <small class="text-muted d-block">Expired Items</small>
+                <h4 class="text-danger mb-0">{{ expired_count }}</h4>
+            </div>
+            
+            <div class="mb-3">
+                <small class="text-muted d-block">Current Page</small>
+                <h4 class="text-info mb-0">{{ inventory.number }} of {{ inventory.paginator.num_pages }}</h4>
+            </div>
+
+            <hr>
+            
+            <h6 class="mb-3"><i class="bi bi-lightning-charge"></i> Quick Actions</h6>
+            <div class="d-grid gap-2">
+                <a href="{% url 'add_inventory' %}" class="btn btn-primary btn-sm">
+                    <i class="bi bi-plus"></i> Add Medicine
+                </a>
+                <a href="{% url 'quick_dispense' %}" class="btn btn-success btn-sm">
+                    <i class="bi bi-box-arrow-right"></i> Quick Dispense
+                </a>
+                <a href="{% url 'dispense_history' %}" class="btn btn-info btn-sm">
+                    <i class="bi bi-clock-history"></i> View History
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Auto-submit form on filter change
+    document.getElementById('filterForm').addEventListener('change', function() {
+        this.submit();
+    });
+
+    // Search with debounce
+    let searchTimeout;
+    document.getElementById('search').addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            document.getElementById('filterForm').submit();
+        }, 500);
+    });
+</script>
+{% endblock %}

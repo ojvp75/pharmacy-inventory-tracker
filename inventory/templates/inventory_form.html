@@ -1,0 +1,412 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }} - Pharmacy Management{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-{% if item %}pencil{% else %}plus-circle{% endif %}"></i>
+                    {{ title }}
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    <!-- Basic Medicine Information -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="text-primary mb-3">
+                                <i class="bi bi-prescription2"></i> Medicine Information
+                            </h6>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.medicine_name.id_for_label }}" class="form-label required">
+                                Medicine Name
+                            </label>
+                            {{ form.medicine_name }}
+                            {% if form.medicine_name.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.medicine_name.errors.0 }}
+                                </div>
+                            {% endif %}
+                            <datalist id="medicines">
+                                {% for medicine in medicines %}
+                                    <option value="{{ medicine }}">
+                                {% endfor %}
+                            </datalist>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.generic_name.id_for_label }}" class="form-label">
+                                Generic Name
+                            </label>
+                            {{ form.generic_name }}
+                            {% if form.generic_name.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.generic_name.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <label for="{{ form.dosage_form.id_for_label }}" class="form-label required">
+                                Dosage Form
+                            </label>
+                            {{ form.dosage_form }}
+                            {% if form.dosage_form.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.dosage_form.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <label for="{{ form.strength.id_for_label }}" class="form-label">
+                                Strength/Dosage
+                            </label>
+                            {{ form.strength }}
+                            {% if form.strength.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.strength.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <label for="{{ form.manufacturer.id_for_label }}" class="form-label">
+                                Manufacturer
+                            </label>
+                            {{ form.manufacturer }}
+                            {% if form.manufacturer.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.manufacturer.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Batch & Supply Information -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="text-primary mb-3">
+                                <i class="bi bi-box-seam"></i> Batch & Supply Information
+                            </h6>
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <label for="{{ form.batch_no.id_for_label }}" class="form-label required">
+                                Batch Number
+                            </label>
+                            {{ form.batch_no }}
+                            {% if form.batch_no.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.batch_no.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <label for="{{ form.expiry_date.id_for_label }}" class="form-label required">
+                                Expiry Date
+                            </label>
+                            {{ form.expiry_date }}
+                            {% if form.expiry_date.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.expiry_date.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <label for="{{ form.date.id_for_label }}" class="form-label required">
+                                Transaction Date
+                            </label>
+                            {{ form.date }}
+                            {% if form.date.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.date.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.supplier_name.id_for_label }}" class="form-label">
+                                Supplier
+                            </label>
+                            {{ form.supplier_name }}
+                            {% if form.supplier_name.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.supplier_name.errors.0 }}
+                                </div>
+                            {% endif %}
+                            <datalist id="suppliers">
+                                {% for supplier in suppliers %}
+                                    <option value="{{ supplier.name }}">
+                                {% endfor %}
+                            </datalist>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.storage_condition.id_for_label }}" class="form-label">
+                                Storage Condition
+                            </label>
+                            {{ form.storage_condition }}
+                            {% if form.storage_condition.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.storage_condition.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Quantity & Cost Information -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="text-primary mb-3">
+                                <i class="bi bi-calculator"></i> Quantity & Cost Information
+                            </h6>
+                        </div>
+
+                        <div class="col-md-3 mb-3">
+                            <label for="{{ form.quantity_in.id_for_label }}" class="form-label">
+                                Quantity In
+                            </label>
+                            {{ form.quantity_in }}
+                            {% if form.quantity_in.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.quantity_in.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-3 mb-3">
+                            <label for="{{ form.quantity_out.id_for_label }}" class="form-label">
+                                Quantity Out
+                            </label>
+                            {{ form.quantity_out }}
+                            {% if form.quantity_out.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.quantity_out.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-3 mb-3">
+                            <label for="{{ form.unit_cost.id_for_label }}" class="form-label">
+                                Unit Cost ($)
+                            </label>
+                            {{ form.unit_cost }}
+                            {% if form.unit_cost.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.unit_cost.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-3 mb-3">
+                            <label for="{{ form.minimum_stock_level.id_for_label }}" class="form-label">
+                                Min. Stock Level
+                            </label>
+                            {{ form.minimum_stock_level }}
+                            {% if form.minimum_stock_level.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.minimum_stock_level.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Dispensing Information -->
+                    <div class="row mb-4" id="dispensingSection" style="display: none;">
+                        <div class="col-12">
+                            <h6 class="text-primary mb-3">
+                                <i class="bi bi-person-check"></i> Dispensing Information
+                            </h6>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.dispensed_to.id_for_label }}" class="form-label">
+                                Patient Name
+                            </label>
+                            {{ form.dispensed_to }}
+                            {% if form.dispensed_to.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.dispensed_to.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.prescribing_doctor.id_for_label }}" class="form-label">
+                                Prescribing Doctor
+                            </label>
+                            {{ form.prescribing_doctor }}
+                            {% if form.prescribing_doctor.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.prescribing_doctor.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Additional Information -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="text-primary mb-3">
+                                <i class="bi bi-chat-left-text"></i> Additional Information
+                            </h6>
+                        </div>
+
+                        <div class="col-12 mb-3">
+                            <label for="{{ form.notes.id_for_label }}" class="form-label">
+                                Notes
+                            </label>
+                            {{ form.notes }}
+                            {% if form.notes.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.notes.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Form Errors -->
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            {{ form.non_field_errors.0 }}
+                        </div>
+                    {% endif %}
+
+                    <!-- Action Buttons -->
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'inventory_list' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left"></i> Back to Inventory
+                        </a>
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-check-circle"></i> 
+                            {% if item %}Update Medicine{% else %}Save Medicine{% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Help Sidebar -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-question-circle"></i> Help & Tips
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <h6 class="text-primary">Quantity Guidelines</h6>
+                    <ul class="small">
+                        <li>Enter <strong>Quantity In</strong> when receiving new stock</li>
+                        <li>Enter <strong>Quantity Out</strong> when dispensing medicine</li>
+                        <li>Don't enter both quantities at the same time</li>
+                    </ul>
+                </div>
+
+                <div class="mb-3">
+                    <h6 class="text-primary">Batch Numbers</h6>
+                    <ul class="small">
+                        <li>Each batch should have a unique number</li>
+                        <li>Use manufacturer's batch/lot number</li>
+                        <li>Required for traceability</li>
+                    </ul>
+                </div>
+
+                <div class="mb-3">
+                    <h6 class="text-primary">Expiry Dates</h6>
+                    <ul class="small">
+                        <li>Must be a future date</li>
+                        <li>System will alert for expiring medicines</li>
+                        <li>Check manufacturer's label carefully</li>
+                    </ul>
+                </div>
+
+                <div class="alert alert-info">
+                    <i class="bi bi-lightbulb"></i>
+                    <strong>Tip:</strong> Use the autocomplete features for medicine names and suppliers to maintain consistency.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Show/hide dispensing section based on quantity_out
+    const quantityOutField = document.getElementById('id_quantity_out');
+    const dispensingSection = document.getElementById('dispensingSection');
+    
+    function toggleDispensingSection() {
+        if (quantityOutField.value && parseInt(quantityOutField.value) > 0) {
+            dispensingSection.style.display = 'block';
+        } else {
+            dispensingSection.style.display = 'none';
+        }
+    }
+    
+    quantityOutField.addEventListener('input', toggleDispensingSection);
+    toggleDispensingSection(); // Initial check
+
+    // Form validation
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const quantityIn = parseInt(document.getElementById('id_quantity_in').value) || 0;
+        const quantityOut = parseInt(document.getElementById('id_quantity_out').value) || 0;
+        
+        if (quantityIn === 0 && quantityOut === 0) {
+            e.preventDefault();
+            alert('Please enter either quantity in or quantity out.');
+            return false;
+        }
+        
+        if (quantityIn > 0 && quantityOut > 0) {
+            e.preventDefault();
+            alert('Please enter either quantity in OR quantity out, not both.');
+            return false;
+        }
+        
+        if (quantityOut > 0) {
+            const dispensedTo = document.getElementById('id_dispensed_to').value.trim();
+            if (!dispensedTo) {
+                e.preventDefault();
+                alert('Patient name is required when dispensing medicine.');
+                document.getElementById('id_dispensed_to').focus();
+                return false;
+            }
+        }
+    });
+
+    // Auto-calculate total cost
+    const unitCostField = document.getElementById('id_unit_cost');
+    const quantityInField = document.getElementById('id_quantity_in');
+    
+    function calculateTotalCost() {
+        const unitCost = parseFloat(unitCostField.value) || 0;
+        const quantity = parseInt(quantityInField.value) || 0;
+        const totalCost = unitCost * quantity;
+        
+        // You could display this somewhere if needed
+        // For now, just console.log for debugging
+        if (unitCost > 0 && quantity > 0) {
+            console.log('Total Cost:', totalCost.toFixed(2));
+        }
+    }
+    
+    unitCostField.addEventListener('input', calculateTotalCost);
+    quantityInField.addEventListener('input', calculateTotalCost);
+</script>
+{% endblock %}

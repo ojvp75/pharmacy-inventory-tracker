@@ -1,0 +1,447 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard - Pharmacy Management{% endblock %}
+
+{% block content %}
+<!-- Quick Stats -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card stat-card" style="border-left-color: #2c5aa0;">
+            <div class="card-body text-center">
+                <i class="bi bi-prescription2 display-4 text-primary mb-2"></i>
+                <h3 class="stat-number">{{ total_medicines }}</h3>
+                <p class="stat-label mb-0">Total Medicines</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card stat-card" style="border-left-color: #28a745;">
+            <div class="card-body text-center">
+                <i class="bi bi-currency-dollar display-4 text-success mb-2"></i>
+                <h3 class="stat-number">${{ total_inventory_value|floatformat:0 }}</h3>
+                <p class="stat-label mb-0">Inventory Value</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card stat-card" style="border-left-color: #dc3545;">
+            <div class="card-body text-center">
+                <i class="bi bi-exclamation-triangle display-4 text-danger mb-2"></i>
+                <h3 class="stat-number">{{ expired_count }}</h3>
+                <p class="stat-label mb-0">Expired Items</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card stat-card" style="border-left-color: #ffc107;">
+            <div class="card-body text-center">
+                <i class="bi bi-clock display-4 text-warning mb-2"></i>
+                <h3 class="stat-number">{{ expiring_soon_count }}</h3>
+                <p class="stat-label mb-0">Expiring Soon</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Main Dashboard Content -->
+    <div class="col-lg-8">
+        <!-- Charts -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-bar-chart"></i> Analytics Overview
+                </h5>
+            </div>
+            <div class="card-body py-3">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <h6>Daily Dispenses (Last 30 Days)</h6>
+                        <div style="height: 250px;">
+                            <canvas id="dispensesChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <h6>Medicine Distribution by Form</h6>
+                        <div style="height: 250px;">
+                            <canvas id="dosageChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <h6>Expiry Status Overview</h6>
+                        <div style="height: 250px;">
+                            <canvas id="expiryChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <h6>Monthly Summary</h6>
+                        <div class="d-flex align-items-center justify-content-center" style="height: 250px;">
+                            <div class="text-center">
+                                <div class="row">
+                                    <div class="col-6">
+                                        <div class="p-3 bg-light rounded">
+                                            <h3 class="text-success mb-1">{{ monthly_additions }}</h3>
+                                            <small class="text-muted">Items Added</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="p-3 bg-light rounded">
+                                            <h3 class="text-info mb-1">{{ monthly_dispenses }}</h3>
+                                            <small class="text-muted">Items Dispensed</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card mb-3">
+                    <div class="card-header py-2">
+                        <h6 class="card-title mb-0">
+                            <i class="bi bi-plus-circle text-success"></i> Recent Additions
+                        </h6>
+                    </div>
+                    <div class="card-body py-2">
+                        {% if recent_additions %}
+                            <div class="list-group list-group-flush">
+                                {% for item in recent_additions %}
+                                <div class="list-group-item d-flex justify-content-between align-items-start border-0 px-0 py-2">
+                                    <div>
+                                        <strong>{{ item.medicine_name }}</strong>
+                                        <br>
+                                        <small class="text-muted">
+                                            Batch: {{ item.batch_no }} | Qty: {{ item.quantity_in }}
+                                        </small>
+                                    </div>
+                                    <small class="text-muted">{{ item.created_at|timesince }} ago</small>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p class="text-muted text-center py-2 mb-0">No recent additions</p>
+                        {% endif %}
+                        <div class="text-center mt-2">
+                            <a href="{% url 'inventory_list' %}" class="btn btn-sm btn-outline-primary">View All</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card mb-3">
+                    <div class="card-header py-2">
+                        <h6 class="card-title mb-0">
+                            <i class="bi bi-box-arrow-right text-info"></i> Recent Dispenses
+                        </h6>
+                    </div>
+                    <div class="card-body py-2">
+                        {% if recent_dispenses %}
+                            <div class="list-group list-group-flush">
+                                {% for dispense in recent_dispenses %}
+                                <div class="list-group-item d-flex justify-content-between align-items-start border-0 px-0 py-2">
+                                    <div>
+                                        <strong>{{ dispense.medicine_name }}</strong>
+                                        <br>
+                                        <small class="text-muted">
+                                            To: {{ dispense.dispensed_to }} | Qty: {{ dispense.quantity_out }}
+                                        </small>
+                                    </div>
+                                    <small class="text-muted">{{ dispense.date|timesince }} ago</small>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p class="text-muted text-center py-2 mb-0">No recent dispenses</p>
+                        {% endif %}
+                        <div class="text-center mt-2">
+                            <a href="{% url 'dispense_history' %}" class="btn btn-sm btn-outline-primary">View All</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Medicines -->
+        <div class="card mb-3">
+            <div class="card-header py-2">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-trophy text-warning"></i> Top Dispensed Medicines
+                </h6>
+            </div>
+            <div class="card-body py-2">
+                {% if top_dispensed %}
+                    <div class="row">
+                        {% for medicine in top_dispensed %}
+                        <div class="col-md-6 col-lg-4 mb-2">
+                            <div class="d-flex justify-content-between align-items-center p-2 bg-light rounded">
+                                <strong>{{ medicine.medicine_name|truncatechars:20 }}</strong>
+                                <span class="badge bg-primary">{{ medicine.total_dispensed }}</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted text-center py-3">No dispense data available</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+        <!-- Alerts -->
+        <div class="card mb-3">
+            <div class="card-header d-flex justify-content-between align-items-center py-2">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-bell text-warning"></i> Alerts & Notifications
+                </h6>
+                {% if alerts %}
+                <span class="badge bg-warning">{{ alerts|length }}</span>
+                {% endif %}
+            </div>
+            <div class="card-body py-2" style="max-height: 300px; overflow-y: auto;">
+                {% if alerts %}
+                    {% for alert in alerts %}
+                    <div class="alert alert-{{ alert.type }} alert-sm mb-2 py-2">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <i class="bi bi-{{ alert.icon }}"></i>
+                                <small>{{ alert.message }}</small>
+                            </div>
+                            {% if alert.action_url %}
+                            <a href="{{ alert.action_url }}" class="btn btn-sm btn-outline-{{ alert.type }}">
+                                {{ alert.action_text }}
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                    <div class="text-center mt-2">
+                        <a href="{% url 'stock_alerts' %}" class="btn btn-sm btn-outline-warning">
+                            View All Alerts
+                        </a>
+                    </div>
+                {% else %}
+                    <div class="text-center text-muted py-3">
+                        <i class="bi bi-check-circle display-6"></i>
+                        <p class="mt-2 mb-1">No active alerts</p>
+                        <small>All systems are running smoothly</small>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="card mb-3">
+            <div class="card-header py-2">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-lightning"></i> Quick Actions
+                </h6>
+            </div>
+            <div class="card-body py-2">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'add_inventory' %}" class="btn btn-primary btn-sm">
+                        <i class="bi bi-plus-circle"></i> Add Medicine
+                    </a>
+                    <a href="{% url 'quick_dispense' %}" class="btn btn-success btn-sm">
+                        <i class="bi bi-box-arrow-right"></i> Quick Dispense
+                    </a>
+                    <a href="{% url 'generate_reports' %}?type=inventory" class="btn btn-info btn-sm">
+                        <i class="bi bi-download"></i> Export Report
+                    </a>
+                    <a href="{% url 'inventory_list' %}" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-list"></i> View Inventory
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Status -->
+        <div class="card">
+            <div class="card-header py-2">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-gear"></i> System Status
+                </h6>
+            </div>
+            <div class="card-body py-2">
+                <div class="row text-center">
+                    <div class="col-6 mb-2">
+                        <div class="text-success">
+                            <i class="bi bi-check-circle fs-4"></i>
+                            <br><small>Database</small>
+                        </div>
+                    </div>
+                    <div class="col-6 mb-2">
+                        <div class="text-success">
+                            <i class="bi bi-check-circle fs-4"></i>
+                            <br><small>Backup</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="text-success">
+                            <i class="bi bi-check-circle fs-4"></i>
+                            <br><small>Security</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="text-success">
+                            <i class="bi bi-check-circle fs-4"></i>
+                            <br><small>Updates</small>
+                        </div>
+                    </div>
+                </div>
+                <hr>
+                <small class="text-muted">
+                    <i class="bi bi-person"></i> Logged in as: <strong>{{ user.username }}</strong><br>
+                    <i class="bi bi-clock"></i> Last activity: {{ user.last_login|timesince }} ago
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Load analytics data and create charts
+fetch('{% url "analytics_data" %}')
+    .then(response => response.json())
+    .then(data => {
+        createCharts(data);
+    })
+    .catch(error => {
+        console.error('Error loading analytics data:', error);
+    });
+
+function createCharts(data) {
+    // Common chart options for consistent sizing
+    const commonOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: true,
+                position: 'bottom',
+                labels: {
+                    boxWidth: 12,
+                    padding: 10
+                }
+            }
+        }
+    };
+
+    // Daily Dispenses Chart
+    const dispensesCtx = document.getElementById('dispensesChart').getContext('2d');
+    new Chart(dispensesCtx, {
+        type: 'line',
+        data: {
+            labels: data.daily_dispenses.map(item => item.day),
+            datasets: [{
+                label: 'Daily Dispenses',
+                data: data.daily_dispenses.map(item => item.total || 0),
+                borderColor: '#2c5aa0',
+                backgroundColor: 'rgba(44, 90, 160, 0.1)',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            ...commonOptions,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        maxTicksLimit: 5
+                    }
+                },
+                x: {
+                    ticks: {
+                        maxTicksLimit: 7,
+                        maxRotation: 45
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+
+    // Dosage Distribution Chart
+    const dosageCtx = document.getElementById('dosageChart').getContext('2d');
+    new Chart(dosageCtx, {
+        type: 'doughnut',
+        data: {
+            labels: data.dosage_distribution.map(item => item.dosage_form),
+            datasets: [{
+                data: data.dosage_distribution.map(item => item.count),
+                backgroundColor: [
+                    '#2c5aa0', '#28a745', '#ffc107', '#dc3545', '#17a2b8',
+                    '#6f42c1', '#fd7e14', '#20c997', '#6c757d', '#e83e8c'
+                ]
+            }]
+        },
+        options: {
+            ...commonOptions,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        boxWidth: 10,
+                        padding: 8,
+                        font: {
+                            size: 11
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // Expiry Status Chart
+    const expiryCtx = document.getElementById('expiryChart').getContext('2d');
+    new Chart(expiryCtx, {
+        type: 'bar',
+        data: {
+            labels: ['Good', 'Expiring Soon', 'Expired'],
+            datasets: [{
+                data: [data.expiry_data.good, data.expiry_data.expiring_soon, data.expiry_data.expired],
+                backgroundColor: ['#28a745', '#ffc107', '#dc3545']
+            }]
+        },
+        options: {
+            ...commonOptions,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        maxTicksLimit: 5
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+}
+
+// Auto-refresh dashboard every 5 minutes
+setInterval(() => {
+    location.reload();
+}, 300000);
+</script>
+{% endblock %}
