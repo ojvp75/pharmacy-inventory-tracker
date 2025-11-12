@@ -74,6 +74,10 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
 
+# Ensure logs directory exists
+LOGS_DIR = os.path.join(BASE_DIR, 'logs')
+os.makedirs(LOGS_DIR, exist_ok=True)
+
 # Logging configuration for production
 LOGGING = {
     'version': 1,
@@ -92,29 +96,45 @@ LOGGING = {
         'file': {
             'level': 'INFO',
             'class': 'logging.FileHandler',
-            'filename': os.path.join(BASE_DIR, 'logs', 'pharmacy.log'),
+            'filename': os.path.join(LOGS_DIR, 'pharmacy.log'),
             'formatter': 'verbose',
         },
         'console': {
-            'level': 'ERROR',
+            'level': 'INFO',
             'class': 'logging.StreamHandler',
             'formatter': 'simple',
         },
     },
     'root': {
-        'handlers': ['file', 'console'],
+        'handlers': ['console'],  # Start with console only
         'level': 'INFO',
     },
     'loggers': {
         'django': {
-            'handlers': ['file', 'console'],
+            'handlers': ['console'],
             'level': 'INFO',
             'propagate': False,
         },
         'inventory': {
-            'handlers': ['file', 'console'],
+            'handlers': ['console'],
             'level': 'INFO',
             'propagate': False,
         },
     },
 }
+
+# Try to add file logging if possible
+try:
+    # Test if we can write to the log file
+    log_file_path = os.path.join(LOGS_DIR, 'pharmacy.log')
+    with open(log_file_path, 'a') as f:
+        f.write('')  # Test write
+    
+    # If successful, add file handlers
+    LOGGING['handlers']['file']['filename'] = log_file_path
+    LOGGING['root']['handlers'] = ['file', 'console']
+    LOGGING['loggers']['django']['handlers'] = ['file', 'console']
+    LOGGING['loggers']['inventory']['handlers'] = ['file', 'console']
+except (PermissionError, FileNotFoundError):
+    # If file logging fails, just use console
+    pass
